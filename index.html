@@ -1,0 +1,1355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Merienda:wght@400;700&display=swap" rel="stylesheet">
+  <title>An Irregular Sort</title>
+  <style>
+    body {
+      font-family: 'Merienda';
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      /* background-image: linear-gradient(257deg, rgb(254, 247, 243), rgb(255, 255, 255)); */
+      background-image: url('https://i.pinimg.com/originals/f4/fa/e5/f4fae5eb8a739d135733d6b30eab8328.gif');
+      color: white;
+      transition: transform 0.8s ease-in-out;
+    }
+    
+    body.rotate-180 {
+      transform: rotate(180deg);
+    }
+
+    .art-link {
+      color: greenyellow;
+    }
+
+    .art-creation-place {
+      display: flex;
+      flex-wrap: nowrap;
+      justify-content: space-between;
+      align-items: stretch;
+      gap: 20px;
+      margin-top: 20px;
+      padding-left: 16px;
+      padding-bottom: 16px;
+      border-left: 1px solid #000;
+      border-bottom: 1px solid #000;
+    }
+
+    .image-container {
+      flex: 1;
+      max-height: 600px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      position: relative;
+    }
+
+    canvas {
+      max-width: 100%;
+      max-height: 700px;
+    }
+
+    .dark-container {
+      margin: 20px 0;
+      padding: 15px;
+      background-color: #222;
+      border-radius: 5px;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .flip-button {
+      margin-left: auto;
+      position: relative;
+      background-color: #005b29;
+      color: white;
+      border: none;
+      font-weight: bold;
+      border-radius: 4px;
+      cursor: pointer;
+      height: 20px;
+      padding: -8px -4px;
+    }
+
+    .flip-button:hover {
+      background-color: white;
+      color: black;
+    }
+    
+    .flip-text {
+      display: inline-block;
+      transform: rotate(180deg);
+    }
+    
+    body.rotate-180 .flip-text {
+      transform: rotate(180deg);
+    }
+
+    select,
+    input {
+      padding: 8px;
+      margin-right: 10px;
+    }
+
+    .loader {
+      display: none;
+      margin-left: 10px;
+    }
+
+    .edit-img {
+      width: 100%;
+      height: 60vh;
+      object-fit: cover;
+      padding-right: 16px;
+    }
+
+    .canvas-label {
+      width: 100%;
+      font-weight: bold;
+      margin-bottom: 5px;
+      text-align: center;
+    }
+
+    .palette-container {
+      flex: 0 0 120px;
+      background-color: #ffffff;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      height: auto;
+      height: 100%;
+      overflow-y: auto;
+    }
+
+    .color-palette {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      flex: 1;
+    }
+
+    .color-swatch {
+      border-radius: 4px;
+      margin-bottom: 0;
+    }
+
+    .color-block {
+      width: 100%;
+      display: flex;
+      font-weight: bold;
+      border-radius: 4px;
+      position: relative;
+    }
+
+    .color-info {
+      position: absolute;
+      bottom: 0;
+      right: -3px;
+      bottom: -8px;
+      color: linear-gradient(257deg, rgb(254, 247, 243), rgb(255, 255, 255)) !important;
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .sort-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      max-height: 800px;
+      background-color: rgba(0, 0, 0);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 48px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      cursor: pointer;
+      z-index: 10;
+    }
+
+    .cutout-text {
+      position: relative;
+      color: white;
+      font-weight: bold;
+    }
+
+    .cutout-text::before {
+      content: 'Sort';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      color: transparent;
+      -webkit-background-clip: text;
+      background-clip: text;
+      background-image: linear-gradient(to bottom, rgba(255, 255, 255, 0.7), rgba(255, 255, 255, 1));
+      mix-blend-mode: destination-out;
+    }
+
+    #sortedContainer:hover .sort-overlay {
+      opacity: 1;
+    }
+
+    .image-text-container {
+      background-color: #222;
+      border-radius: 5px;
+      display: flex;
+      flex-direction: column;
+      padding: 20px;
+      margin-bottom: 33px;
+    }
+
+    .image-text-container .image-section {
+      width: 100%;
+      position: relative;
+      margin-bottom: 20px;
+    }
+
+    .image-text-container .text-section {
+      width: 100%;
+      padding: 0;
+    }
+
+    .image-text-container .edit-img  {
+      width: 100%;
+      height: auto;
+      max-height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    /* Mobile responsiveness */
+    @media (max-width: 768px) {
+      body {
+        padding: 10px;
+      }
+
+      .art-creation-place {
+        flex-direction: column;
+        padding-left: 8px;
+      }
+
+      .image-container {
+        width: 100%;
+      }
+
+      .palette-container {
+        width: 100%;
+        height: 120px !important;
+        flex-direction: row !important;
+        margin-top: 20px;
+      }
+
+      .color-palette {
+        flex-direction: row !important;
+        width: 100%;
+      }
+
+      .color-swatch {
+        flex: 1;
+        margin-right: 10px;
+      }
+
+      .color-block {
+        height: 100px !important;
+      }
+
+      .dark-container {
+        flex-direction: column;
+      }
+
+      .dark-container select,
+      .dark-container input {
+        width: 100%;
+        margin-bottom: 10px;
+      }
+    }
+
+    /* Image expansion styles */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1000;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.9);
+      overflow: auto;
+    }
+
+    .modal-content {
+      margin: auto;
+      display: block;
+      max-width: 90%;
+      max-height: 90vh;
+      margin-top: 5vh;
+    }
+
+    .modal-close {
+      position: absolute;
+      top: 15px;
+      right: 35px;
+      color: #f1f1f1;
+      font-size: 40px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .expandable-image {
+      cursor: pointer;
+      transition: opacity 0.3s;
+    }
+
+    .expandable-image:hover {
+      opacity: 0.8;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="dark-container">
+    <div class="header">
+      <h1>An Irregular Sort</h1>
+      <p>An art project using irregular and inefficient methods of the quick sort algorithm to sort images by their pixel values.</p>
+      <p>To use please upload an image and select a method then click on the right image to begin the sorting. Some methods take longer than others so please have some patience.</p>
+      <a class="art-link" href="#art-maker">Click here to try the sort algorithms yourself!</a>
+    </div>
+  </div>
+
+  <div class="image-text-container">
+    <div class="image-section">
+      <img class="edit-img " src="./sortedPhotos/ostrainedit.jpg" />
+    </div>
+    <div class="text-section">
+      <p>I have always had a fascination with glitch art. I find it deeply unsettling, like when you connect to a server for the first time and something is not quite loaded right away. You see an world inbetween nothingness and somethingness, the flow of information, usually too fast for the eye to see, but you see it in all its shattered glory. An image Half awake, half dreaming, like being in an altered state of consciousness.</p>
+      <p>A though the edit above was made with Touch Designer and the a quick sort algorithm to give it that extra os flair. Below is the RAW output of the sorting algorithm and it's many variations.</p>
+      <br/>
+      <img class="edit-img" src="./sortedPhotos/loadingintohewesstation.png" />
+      <br/>
+      <img class="edit-img" src="./sortedPhotos/blueskyisfalling.png" />
+      <br/>
+      <img class="edit-img" src="./sortedPhotos/deepcountrytexas.png" />
+      <br/>
+      <img class="edit-img" src="./sortedPhotos/lightbringer.png" />
+      <br/>
+      <img class="edit-img" src="./sortedPhotos/liberty edit.png" />
+      <br/>
+    </div>
+  </div>
+  
+  <div class="image-text-container">
+    <h3>Diagonal Sorting</h3>
+    <p>While experimenting with ways to I created the Triangle Pattern Glitch Sort. This method sorts the pixels in a diagonal pattern.</p>
+    <p>The technique,</p>
+    <p>the diagonal sort creates a glitch effect by calculating each pixel's position along diagonal lines in the image. It works by adding a pixel's x and y coordinates together and using modulo 16 ((x + y) % 16) to create 16 repeating diagonal bands across the image. When sorting, pixels are grouped based on their diagonal band value (0-15), which causes pixels with the same diagonal position to cluster together. The quicksort algorithm then rearranges all pixels based on these diagonal values, quick you might miss it. If you want to create your own diagonal sort, you can do so by clicking the "Triangle Pattern Glitch Sort" option in the dropdown menu on the art maker at the bottom of the page.</p>
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/technostatictriangles2.png" />
+    </div>
+    <br/>
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/technostatic.png" />
+    </div>
+    
+    <p>The photos used above was notably taken at an unoffical SXSW bridge party in Austin in 2022</p>
+
+
+    
+  </div>
+
+  <div class="image-text-container">
+    <h3>Going in Circles</h3>
+    <p>While exploring circular patterns, I developed two distinct sorting methods that create circular effects: the Spiral Pattern Sort and the Rings Glitch Sort.</p>
+    
+    <h4>Spiral Pattern Sort</h4>
+    <p>The Spiral Pattern Sort creates a hypnotic spiral effect by combining the angle and distance of each pixel from the center of the image. It works by calculating each pixel's angular position (using Math.atan2) and its distance from the center, then combining these values with a modulo operation ((angle * 10 + distance / 10) % 50) to create repeating spiral bands. When sorted, pixels with similar spiral positions cluster together, creating a swirling, vortex-like pattern that radiates from the center of the image.</p>
+    
+    <h4>Rings Glitch Sort</h4>
+    <p>The Rings Glitch Sort (labeled as "concentric" in the code) creates a series of concentric circular bands by calculating each pixel's distance from the center of the image and using modulo 30 to create repeating rings. This sorting method groups pixels that are equidistant from the center, resulting in a series of circular bands that ripple outward from the image's center. The effect is reminiscent of sound waves or ripples in water, frozen in digital form.</p>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/spirtalin.png" />
+    </div>
+    <br/>
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/glitchdecay.png" />
+    </div>
+    <br/>
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/thingswecoverupandhide.png" />
+    </div>
+
+    <p>Sometimes gravity becomes to much and we spiral into the abyss. Try to hide there, cover it up. We might build high castles in that abyss. The weeds may find a way to grow though. The graffiti on the wall, tho it may of been made with a sharpie will remain a reminder, but your be okay. Keep building castles.</p>
+    
+  </div>
+
+  <div class="image-text-container">
+    <h3>Repeating Dimensions Fall into Static</h3>
+    <p>Fractals are one of the most beautiful mathematical structures. An infinity of shape, reaching as deep as the light wants to go.</p>
+
+    <p>Can we create order from chaos by sorting it?</p>
+
+    <p>This sorting algorithm transforms your image by mapping each pixel to the Mandelbrot set's escape-time values. It works by treating each pixel's position as a point in the complex plane (scaled to the region [-2, 1] × [-1.5, 1.5]), then calculating how quickly that point's orbit escapes the Mandelbrot set's boundary. The algorithm iterates the function f(z) = z² + c up to 100 times for each pixel, tracking how many iterations it takes for the value to escape. When sorted, pixels cluster together based on their escape-time values, creating intricate fractal-like patterns that echo the visual complexity of the Mandelbrot set itself. Unfortunately, there are only so many pixels in a png so we can only go so deep.r</p>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/opticalmdmatunnel.png" />
+    </div>
+  </div>
+
+  <div class="image-text-container">
+    <h3>Order</h3>
+    <p>The following are more examples of the basic sorting methods and the abstract gradients that they muster. All but one of the photos taken by me, can you guess which one?</p>
+
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/wintervalleyriver.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/wheniclosemyeyes.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/warehouse.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/urbandreadcolors.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/undergound.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/tunnelrave.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/rootsintodepths.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/northkoreantalkshowhost.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/nobodywantsflowerswhentheirdead.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/mablechrist.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/lightfog.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/graffitifrequency.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/filledthevoidalongtimeago.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/fakesnowrealstatic.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/comradedown.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/bluegreenyesterday.png" />
+    </div>
+    <br/>
+    
+    <div class="image-section">
+      <img class="edit-img" src="./sortedPhotos/blackoutcolors.png" />
+    </div>
+  </div>
+
+  <div class="dark-container" id="art-maker">
+    <input type="file" id="imageInput" accept="image/*">
+    <select id="sortMode">
+      <option value="brightness">Color Sort</option>
+      <option value="red">Sort By Red Pixel</option>
+      <option value="green">Sort By Green Pixel</option>
+      <option value="blue">Sort By Blue Pixel</option>
+      <option value="diagonal">Triangle Pattern Glitch Sort</option>
+      <option value="checkerboard">Checkerboard Glitch Sort</option>
+      <option value="concentric">Rings Glitch Sort</option>
+      <option value="wavves">wavves creator</option>
+      <option value="spiral">Spiral Pattern Sort</option>
+      <option value="mandelbrot">Mandelbrot Fractal Sort</option>
+    </select>
+    <button id="rotateButton" class="flip-button">
+      <span class="flip-text">Flip</span>
+    </button>
+    <span id="loader" class="loader">mixxin' colors...</span>
+  </div>
+
+  <div class="art-creation-place">
+    <div class="image-container">
+      <canvas id="originalCanvas"></canvas>
+    </div>
+    <div class="image-container" id="sortedContainer">
+      <div class="sort-overlay" id="sortOverlay">
+        <div class="cutout-text">Sort</div>
+      </div>
+      <canvas id="sortedCanvas"></canvas>
+    </div>
+    <div class="palette-container">
+      <div id="colorPalette" class="color-palette"></div>
+    </div>
+  </div>
+
+  <div id="imageModal" class="modal">
+    <span class="modal-close">&times;</span>
+    <img class="modal-content" id="expandedImage">
+  </div>
+
+  <script>
+    const swap = (i, j, array) => {
+      for (let k = 0; k < 4; k++) {
+        const temp = array[i + k];
+        array[i + k] = array[j + k];
+        array[j + k] = temp;
+      }
+    };
+
+    const comparisonFunctions = {
+      red: (array, idx) => {
+        return array[idx];
+      },
+      green: (array, idx) => {
+        return array[idx + 1];
+      },
+      blue: (array, idx) => {
+        return array[idx + 2];
+      },
+      hue: (array, idx) => {
+        const r = array[idx] / 255;
+        const g = array[idx + 1] / 255;
+        const b = array[idx + 2] / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+
+        if (max === min) return 0;
+
+        let h;
+        if (max === r) {
+          h = (g - b) / (max - min);
+        } else if (max === g) {
+          h = 2 + (b - r) / (max - min);
+        } else {
+          h = 4 + (r - g) / (max - min);
+        }
+
+        h *= 60;
+        if (h < 0) h += 360;
+        return h;
+      },
+      saturation: (array, idx) => {
+        const r = array[idx] / 255;
+        const g = array[idx + 1] / 255;
+        const b = array[idx + 2] / 255;
+
+        const max = Math.max(r, g, b);
+        const min = Math.min(r, g, b);
+        const l = (max + min) / 2;
+
+        if (max === min) return 0;
+
+        return l > 0.5
+          ? (max - min) / (2 - max - min)
+          : (max - min) / (max + min);
+      },
+      radialDistance: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        return Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+      },
+      diagonal: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        return (x + y) % 16;
+      },
+      checkerboard: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+
+        return (x % 2) ^ (y % 2); 
+      },
+      wavves: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const shoreline = height - (x * 0.5);
+        const distFromShore = shoreline - y;
+
+        const waveFrequency = 0.05;
+        const waveHeight = 50;
+
+        const wave1 = Math.sin(x * waveFrequency) * waveHeight;
+        const wave2 = Math.sin(x * waveFrequency * 1.5 + 1.3) * (waveHeight * 0.7);
+        const wave3 = Math.sin(x * waveFrequency * 0.8 + 2.9) * (waveHeight * 0.5);
+
+        let waveEffect = wave1 + wave2 + wave3;
+
+        if (distFromShore > -100 && distFromShore < 100) {
+          const breakingFactor = Math.exp(-Math.abs(distFromShore) / 50);
+          waveEffect *= (1 + breakingFactor * 1.5);
+
+          const turbulence = Math.sin(x * 0.3) * Math.cos(y * 0.3) * 15 * breakingFactor;
+          waveEffect += turbulence;
+        }
+
+        const baseValue = array[idx] * 0.299 + array[idx + 1] * 0.587 + array[idx + 2] * 0.114;
+
+        let sandEffect = 0;
+        if (distFromShore < 0) {
+          const rippleIntensity = Math.exp(distFromShore / 100);
+          const ripples = Math.sin(x * 0.2 + y * 0.1) * Math.sin(y * 0.2) * 30 * rippleIntensity;
+          sandEffect = -distFromShore * 0.5 + ripples;
+        }
+
+        return baseValue + waveEffect + sandEffect;
+      },
+      concentric: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const distance = Math.sqrt(Math.pow(x - centerX, 2) + Math.pow(y - centerY, 2));
+
+        return distance % 30;
+      },
+      spiral: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const dx = x - centerX;
+        const dy = y - centerY;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+        const angle = Math.atan2(dy, dx);
+        return (angle * 10 + distance / 10) % 50;
+      },
+      mandelbrot: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const real = (x / width) * 3 - 2;
+        const imag = (y / height) * 3 - 1.5;
+        let zr = 0;
+        let zi = 0;
+        const maxIter = 100;
+        let iter = 0;
+        while (iter < maxIter && (zr * zr + zi * zi) < 4) {
+          const temp = zr * zr - zi * zi + real;
+          zi = 2 * zr * zi + imag;
+          zr = temp;
+          iter++;
+        }
+
+        return iter;
+      },
+      brightness: {
+        isCustomSorter: true,
+        sort: function(imageData, canvas) {
+          const width = canvas.width;
+          const height = canvas.height;
+          const pixelCount = width * height;
+          const data = imageData.data;
+          
+          loader.style.display = 'inline-block';
+          loader.textContent = 'Sorting by brightness (pass 1/5)...';
+          
+          const performSortPass = (pass, maxPasses, callback) => {
+            console.log(`Starting brightness sort pass ${pass + 1}/${maxPasses}...`);
+            
+            loader.textContent = `Sorting by brightness (pass ${pass + 1}/${maxPasses})...`;
+            
+            const pixels = new Uint32Array(pixelCount);
+            const brightnessValues = new Float32Array(pixelCount);
+            
+            for (let i = 0, j = 0; i < data.length; i += 4, j++) {
+              brightnessValues[j] = (data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114);
+              pixels[j] = j;
+            }
+            
+            if (pass === 0) {
+              const numBuckets = 256;
+              const buckets = Array(numBuckets).fill().map(() => []);
+              
+              for (let i = 0; i < pixelCount; i++) {
+                const bucketIndex = Math.min(numBuckets - 1, Math.floor(brightnessValues[i]));
+                buckets[bucketIndex].push(pixels[i]);
+              }
+              
+              let sortedIndices = [];
+              for (let i = numBuckets - 1; i >= 0; i--) {
+                sortedIndices = sortedIndices.concat(buckets[i]);
+              }
+              
+              const resultBuffer = new Uint8ClampedArray(data.length);
+              for (let i = 0; i < pixelCount; i++) {
+                const sourceIdx = sortedIndices[i] * 4;
+                const targetIdx = i * 4;
+                resultBuffer[targetIdx] = data[sourceIdx];
+                resultBuffer[targetIdx + 1] = data[sourceIdx + 1];
+                resultBuffer[targetIdx + 2] = data[sourceIdx + 2];
+                resultBuffer[targetIdx + 3] = data[sourceIdx + 3];
+              }
+              
+              for (let i = 0; i < data.length; i++) {
+                data[i] = resultBuffer[i];
+              }
+            } else {
+              const regionSize = Math.max(100, Math.floor(pixelCount / 20));
+              const numRegions = Math.ceil(pixelCount / regionSize);
+
+              for (let region = 0; region < numRegions; region++) {
+                const startIdx = region * regionSize;
+                const endIdx = Math.min((region + 1) * regionSize, pixelCount);
+                
+                if (endIdx - startIdx <= 1) continue;
+                
+                const regionIndices = [];
+                const regionBrightness = [];
+                
+                for (let i = startIdx; i < endIdx; i++) {
+                  const pixelIdx = i * 4;
+                  const r = data[pixelIdx];
+                  const g = data[pixelIdx + 1];
+                  const b = data[pixelIdx + 2];
+                  
+                  const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+                  const max = Math.max(r, g, b);
+                  const min = Math.min(r, g, b);
+                  const colorfulness = max - min;
+                  const score = brightness + (colorfulness / 1000);
+                  
+                  regionIndices.push(i);
+                  regionBrightness.push(score);
+                }
+                const regionPairs = regionIndices.map((idx, i) => ({ idx, brightness: regionBrightness[i] }));
+                regionPairs.sort((a, b) => b.brightness - a.brightness);
+                
+                const regionBuffer = new Uint8ClampedArray((endIdx - startIdx) * 4);
+                
+                for (let i = 0; i < regionPairs.length; i++) {
+                  const sourceIdx = regionPairs[i].idx * 4;
+                  const targetIdx = i * 4;
+                  
+                  regionBuffer[targetIdx] = data[sourceIdx];
+                  regionBuffer[targetIdx + 1] = data[sourceIdx + 1];
+                  regionBuffer[targetIdx + 2] = data[sourceIdx + 2];
+                  regionBuffer[targetIdx + 3] = data[sourceIdx + 3];
+                }
+                
+                for (let i = 0; i < regionPairs.length; i++) {
+                  const targetIdx = (startIdx + i) * 4;
+                  const sourceIdx = i * 4;
+                  
+                  data[targetIdx] = regionBuffer[sourceIdx];
+                  data[targetIdx + 1] = regionBuffer[sourceIdx + 1];
+                  data[targetIdx + 2] = regionBuffer[sourceIdx + 2];
+                  data[targetIdx + 3] = regionBuffer[sourceIdx + 3];
+                }
+              }
+            }
+            
+            sortedCtx.putImageData(imageData, 0, 0);
+            
+            if (pass < maxPasses - 1) {
+              setTimeout(() => performSortPass(pass + 1, maxPasses, callback), 250);
+            } else {
+              console.log("Brightness sorting completed!");
+              const resultBuffer = new Uint8ClampedArray(data.length);
+              const pixelBrightness = [];
+              
+              for (let i = 0; i < pixelCount; i++) {
+                const idx = i * 4;
+                const r = data[idx];
+                const g = data[idx + 1];
+                const b = data[idx + 2];
+                
+                const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+                const max = Math.max(r, g, b);
+                const min = Math.min(r, g, b);
+                const colorfulness = max - min;
+                const score = brightness + (colorfulness / 1000);
+                
+                pixelBrightness.push({ idx: i, brightness: score });
+              }
+              
+              pixelBrightness.sort((a, b) => b.brightness - a.brightness);
+              
+              for (let i = 0; i < pixelCount; i++) {
+                const sourceIdx = pixelBrightness[i].idx * 4;
+                const targetIdx = i * 4;
+                
+                resultBuffer[targetIdx] = data[sourceIdx];
+                resultBuffer[targetIdx + 1] = data[sourceIdx + 1];
+                resultBuffer[targetIdx + 2] = data[sourceIdx + 2];
+                resultBuffer[targetIdx + 3] = data[sourceIdx + 3];
+              }
+              
+              for (let i = 0; i < data.length; i++) {
+                data[i] = resultBuffer[i];
+              }
+              
+              sortedCtx.putImageData(imageData, 0, 0);
+              
+              loader.style.display = 'none';
+              loader.textContent = 'mixxin\' colors...';
+              hasBeenSorted = true;
+              sortOverlay.style.opacity = '0';
+              sortOverlay.style.pointerEvents = 'none';
+              
+              callback(true);
+            }
+          };
+          
+          performSortPass(0, 5, (result) => {
+            isRunning = false;
+            return result;
+          });
+          
+          return false;
+        }
+      },
+      brightCenterSpiral: (array, idx, width, height) => {
+        const r = array[idx];
+        const g = array[idx + 1];
+        const b = array[idx + 2];
+        const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+        return -brightness;
+      },
+      darkCenterSpiral: (array, idx, width, height) => {
+        const r = array[idx];
+        const g = array[idx + 1];
+        const b = array[idx + 2];
+        const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+        
+        return brightness;
+      },
+      rightToLeftBrightness: (array, idx, width, height) => {
+        const r = array[idx];
+        const g = array[idx + 1];
+        const b = array[idx + 2];
+        const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const invertedX = width - x;
+        return (y * width) + (255 - brightness);
+      },
+      
+      bonnarooLogo: (array, idx, width, height) => {
+        const pixelIdx = Math.floor(idx / 4);
+        const x = pixelIdx % width;
+        const y = Math.floor(pixelIdx / width);
+        const r = array[idx];
+        const g = array[idx + 1];
+        const b = array[idx + 2];
+        const brightness = r * 0.299 + g * 0.587 + b * 0.114;
+        const centerX = width / 2;
+        const centerY = height / 2;
+        const radiusScale = Math.min(width, height) / 4;
+        const circle1 = {
+          x: centerX - radiusScale * 1.2,
+          y: centerY,
+          radius: radiusScale
+        };
+        
+        const circle2 = {
+          x: centerX + radiusScale * 0.8,
+          y: centerY,
+          radius: radiusScale
+        };
+        
+        const circle3 = {
+          x: centerX,
+          y: centerY + radiusScale * 0.1,
+          radius: radiusScale
+        };
+        
+        const distToCircle1 = Math.abs(Math.sqrt(Math.pow(x - circle1.x, 2) + Math.pow(y - circle1.y, 2)) - circle1.radius);
+        const distToCircle2 = Math.abs(Math.sqrt(Math.pow(x - circle2.x, 2) + Math.pow(y - circle2.y, 2)) - circle2.radius);
+        const distToCircle3 = Math.abs(Math.sqrt(Math.pow(x - circle3.x, 2) + Math.pow(y - circle3.y, 2)) - circle3.radius);
+        
+        const minDist = Math.min(distToCircle1, distToCircle2, distToCircle3);
+        
+        const inCircle1 = Math.sqrt(Math.pow(x - circle1.x, 2) + Math.pow(y - circle1.y, 2)) <= circle1.radius;
+        const inCircle2 = Math.sqrt(Math.pow(x - circle2.x, 2) + Math.pow(y - circle2.y, 2)) <= circle2.radius;
+        const inCircle3 = Math.sqrt(Math.pow(x - circle3.x, 2) + Math.pow(y - circle3.y, 2)) <= circle3.radius;
+        
+        let sortValue = 1000 + brightness;
+        
+        if ((inCircle1 && inCircle2) || (inCircle1 && inCircle3) || (inCircle2 && inCircle3)) {
+          if (inCircle1 && inCircle2 && inCircle3) {
+            return -3000 - brightness;
+          }
+          return -2000 - brightness;
+        }
+        
+        if (inCircle1 || inCircle2 || inCircle3) {
+          return -1000 - brightness;
+        }
+        
+        return minDist * 5 + (255 - brightness);
+      },
+    };
+
+    const partition = (
+      array,
+      low,
+      high,
+      compare,
+      pixelIdxLength
+    ) => {
+      let pivot = compare(array, high);
+      let index = low - pixelIdxLength;
+
+      for (let j = low; j <= high - pixelIdxLength; j += pixelIdxLength) {
+        if (compare(array, j) <= pivot) {
+          index += pixelIdxLength;
+          swap(index, j, array);
+        }
+      }
+
+      swap(index + pixelIdxLength, high, array);
+      return index + pixelIdxLength;
+    };
+
+    // QuickSort
+    const quickSort = (
+      array,
+      sortedCallback,
+      compare,
+      sortPosition,
+      pixelIdxLength = 4,
+      renderLoops = 320
+    ) => {
+      let top, high, low, stack;
+
+      if (!sortPosition || typeof sortPosition === "number") {
+        let numPixels = Math.floor(array.length / 4);
+        stack = new Array(numPixels);
+        stack.fill(0);
+
+        top = -1;
+
+        stack[++top] = 0;
+        stack[++top] = array.length - pixelIdxLength;
+      } else {
+        top = sortPosition.top;
+        high = sortPosition.high;
+        low = sortPosition.low;
+        stack = sortPosition.stack;
+      }
+
+      for (let i = 0; i <= renderLoops; i++) {
+        if (top < 0) {
+          sortedCallback();
+          break;
+        }
+
+        high = stack[top--];
+        low = stack[top--];
+
+        let p = partition(array, low, high, compare, pixelIdxLength);
+
+        if (p - pixelIdxLength > low) {
+          stack[++top] = low;
+          stack[++top] = p - pixelIdxLength;
+        }
+
+        if (p + pixelIdxLength < high) {
+          stack[++top] = p + pixelIdxLength;
+          stack[++top] = high;
+        }
+      }
+
+      return {
+        top: top,
+        high: high,
+        low: low,
+        stack: stack,
+      };
+    };
+
+    // DOM
+    const imageInput = document.getElementById('imageInput');
+    const sortMode = document.getElementById('sortMode');
+    const loader = document.getElementById('loader');
+    const originalCanvas = document.getElementById('originalCanvas');
+    const sortedCanvas = document.getElementById('sortedCanvas');
+    const sortOverlay = document.getElementById('sortOverlay');
+    const colorPalette = document.getElementById('colorPalette');
+
+    const originalCtx = originalCanvas.getContext('2d');
+    const sortedCtx = sortedCanvas.getContext('2d');
+
+    let imageData;
+    let sortState;
+    let isRunning = false;
+    let hasBeenSorted = false;
+
+    function rgbToHex(r, g, b) {
+      return '#' + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+    }
+
+    function extractColorPalette(imageData, numColors = 8) {
+      const pixels = [];
+      const data = imageData.data;
+      const width = imageData.width;
+      const height = imageData.height;
+
+      const skipFactor = Math.max(1, Math.floor((width * height) / 10000));
+
+      for (let i = 0; i < data.length; i += 4 * skipFactor) {
+        if (data[i + 3] < 128) continue;
+
+        pixels.push([data[i], data[i + 1], data[i + 2]]);
+      }
+
+      let centroids = [];
+      const usedIndices = new Set();
+
+      for (let i = 0; i < numColors; i++) {
+        let index;
+        do {
+          index = Math.floor(Math.random() * pixels.length);
+        } while (usedIndices.has(index) && usedIndices.size < pixels.length);
+
+        if (usedIndices.size < pixels.length) {
+          usedIndices.add(index);
+          centroids.push([...pixels[index]]);
+        } else {
+          break;
+        }
+      }
+
+      const iterations = 3;
+      for (let iter = 0; iter < iterations; iter++) {
+        const clusters = Array(centroids.length).fill().map(() => []);
+
+        for (const pixel of pixels) {
+          let minDist = Infinity;
+          let closestCentroid = 0;
+
+          for (let i = 0; i < centroids.length; i++) {
+            const dist = Math.sqrt(
+              Math.pow(pixel[0] - centroids[i][0], 2) +
+              Math.pow(pixel[1] - centroids[i][1], 2) +
+              Math.pow(pixel[2] - centroids[i][2], 2)
+            );
+
+            if (dist < minDist) {
+              minDist = dist;
+              closestCentroid = i;
+            }
+          }
+
+          clusters[closestCentroid].push(pixel);
+        }
+
+        for (let i = 0; i < centroids.length; i++) {
+          if (clusters[i].length === 0) continue;
+
+          const sumR = clusters[i].reduce((sum, pixel) => sum + pixel[0], 0);
+          const sumG = clusters[i].reduce((sum, pixel) => sum + pixel[1], 0);
+          const sumB = clusters[i].reduce((sum, pixel) => sum + pixel[2], 0);
+
+          centroids[i] = [
+            Math.round(sumR / clusters[i].length),
+            Math.round(sumG / clusters[i].length),
+            Math.round(sumB / clusters[i].length)
+          ];
+        }
+      }
+
+      const colorCounts = centroids.map((_, i) => ({ color: centroids[i], count: 0 }));
+
+      for (const pixel of pixels) {
+        let minDist = Infinity;
+        let closestCentroid = 0;
+
+        for (let i = 0; i < centroids.length; i++) {
+          const dist = Math.sqrt(
+            Math.pow(pixel[0] - centroids[i][0], 2) +
+            Math.pow(pixel[1] - centroids[i][1], 2) +
+            Math.pow(pixel[2] - centroids[i][2], 2)
+          );
+
+          if (dist < minDist) {
+            minDist = dist;
+            closestCentroid = i;
+          }
+        }
+
+        colorCounts[closestCentroid].count++;
+      }
+
+      colorCounts.sort((a, b) => b.count - a.count);
+
+      return colorCounts.map(item => {
+        const [r, g, b] = item.color;
+        return {
+          hex: rgbToHex(r, g, b),
+          rgb: [r, g, b],
+          percentage: Math.round((item.count / pixels.length) * 100)
+        };
+      });
+    }
+
+    function displayColorPalette(colors) {
+      colorPalette.innerHTML = '';
+
+      const imgData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+      const palette = extractColorPalette(imgData, 5);
+
+      const canvasHeight = originalCanvas.offsetHeight || originalCanvas.height;
+
+      colorPalette.style.height = `${canvasHeight}px`;
+
+      const totalPaletteHeight = canvasHeight;
+      const numColors = 5;
+      const gapSize = 15;
+      const totalGapHeight = gapSize * (numColors - 1);
+      const availableHeightForBlocks = totalPaletteHeight - totalGapHeight - 10; 
+      const blockHeight = Math.floor(availableHeightForBlocks / numColors);
+
+      palette.sort((a, b) => {
+        const brightnessA = (a.rgb[0] * 299 + a.rgb[1] * 587 + a.rgb[2] * 114) / 1000;
+        const brightnessB = (b.rgb[0] * 299 + b.rgb[1] * 587 + b.rgb[2] * 114) / 1000;
+        return brightnessB - brightnessA;
+      });
+
+      palette.forEach((color, index) => {
+        const swatch = document.createElement('div');
+        swatch.className = 'color-swatch';
+
+        const colorBlock = document.createElement('div');
+        colorBlock.className = 'color-block';
+        colorBlock.style.backgroundColor = color.hex;
+        colorBlock.style.height = `${blockHeight}px`;
+        colorBlock.style.marginBottom = (index < numColors - 1) ? `${gapSize}px` : '0';
+
+        const colorInfo = document.createElement('div');
+        colorInfo.className = 'color-info';
+
+        const percentageText = color.percentage;
+
+        const random = Math.random() * 100;
+        let fractionText = '';
+
+        if (random < 10) {
+          fractionText = '½';
+        } else if (random < 14) {
+          fractionText = '⅓';
+        } else if (random < 18) {
+          fractionText = '⅞';
+        } else if (random < 20) {
+          fractionText = '⅒';
+        }
+
+        colorInfo.textContent = `${percentageText}${fractionText}`;
+
+        colorBlock.appendChild(colorInfo);
+        swatch.appendChild(colorBlock);
+        colorPalette.appendChild(swatch);
+      });
+    }
+
+    imageInput.addEventListener('change', (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const img = new Image();
+        img.onload = () => {
+          originalCanvas.width = img.width;
+          originalCanvas.height = img.height;
+          sortedCanvas.width = img.width;
+          sortedCanvas.height = img.height;
+
+          originalCtx.drawImage(img, 0, 0);
+          sortedCtx.drawImage(img, 0, 0);
+
+          const imgData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+          const palette = extractColorPalette(imgData, 8);
+          displayColorPalette(palette);
+
+          hasBeenSorted = false;
+
+          sortOverlay.style.opacity = '0';
+          sortOverlay.style.pointerEvents = 'auto';
+          setTimeout(() => {
+            if (!hasBeenSorted) {
+              sortOverlay.style.opacity = '';
+            }
+          }, 100);
+        };
+        img.src = event.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    sortOverlay.addEventListener('click', () => {
+      if (isRunning) return;
+      
+      const selectedMode = sortMode.value;
+      const selectedSorter = comparisonFunctions[selectedMode];
+      
+      if (!selectedSorter) {
+        alert('Please select a valid sort mode');
+        return;
+      }
+      
+      imageData = sortedCtx.getImageData(0, 0, sortedCanvas.width, sortedCanvas.height);
+      
+      isRunning = true;
+      loader.style.display = 'inline-block';
+      sortOverlay.style.opacity = '0';
+      
+      if (selectedSorter.isCustomSorter) {
+        setTimeout(() => {
+          selectedSorter.sort(imageData, sortedCanvas);
+        }, 50);
+        return;
+      }
+      
+      if (selectedMode === 'diagonal') {
+        loader.textContent = 'Preparing diagonal glitch...';
+        
+        setTimeout(() => {
+          sortState = null;
+          requestAnimationFrame(runSort);
+        }, 2000);
+        return;
+      }
+      
+      sortState = null;
+      requestAnimationFrame(runSort);
+    });
+
+    function runSort() {
+      const selectedMode = sortMode.value;
+      const originalCompare = comparisonFunctions[selectedMode];
+      
+      const wrappedCompare = (array, idx) => {
+        if (['diagonal', 'checkerboard', 'concentric', 'wavves', 'spiral', 'radialDistance',
+             'mandelbrot', 'julia', 'mandelbrotJulia', 'brightCenterSpiral', 'darkCenterSpiral', 
+             'rightToLeftBrightness', 'bonnarooLogo'].includes(selectedMode)) {
+          return originalCompare(array, idx, sortedCanvas.width, sortedCanvas.height);
+        }
+        return originalCompare(array, idx);
+      };
+
+      sortState = quickSort(
+        imageData.data,
+        () => {
+          sortedCtx.putImageData(imageData, 0, 0);
+          isRunning = false;
+          loader.style.display = 'none';
+          hasBeenSorted = true;
+          sortOverlay.style.opacity = '0';
+          sortOverlay.style.pointerEvents = 'none';
+          sortState = null;
+        },
+        wrappedCompare,
+        sortState,
+        4,
+        1000
+      );
+      
+      sortedCtx.putImageData(imageData, 0, 0);
+      
+      if (isRunning) {
+        requestAnimationFrame(runSort);
+      }
+    }
+
+    window.addEventListener('resize', () => {
+      if (originalCanvas.width > 0 && originalCanvas.height > 0) {
+        const imgData = originalCtx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+        displayColorPalette(extractColorPalette(imgData, 5));
+      }
+    });
+
+    const rotateButton = document.getElementById('rotateButton');
+    rotateButton.addEventListener('click', () => {
+      document.body.classList.toggle('rotate-180');
+    });
+
+    const modal = document.getElementById('imageModal');
+    const modalImg = document.getElementById('expandedImage');
+    const closeBtn = document.getElementsByClassName('modal-close')[0];
+
+    function makeImagesExpandable() {
+      const images = document.getElementsByClassName('edit-img');
+      for (let img of images) {
+        img.classList.add('expandable-image');
+        img.onclick = function() {
+          modal.style.display = 'block';
+          modalImg.src = this.src;
+        }
+      }
+    }
+
+    closeBtn.onclick = function() {
+      modal.style.display = 'none';
+    }
+    window.onclick = function(event) {
+      if (event.target == modal) {
+        modal.style.display = 'none';
+      }
+    }
+    window.addEventListener('load', makeImagesExpandable);
+    const observer = new MutationObserver(function(mutations) {
+      mutations.forEach(function(mutation) {
+        if (mutation.addedNodes.length) {
+          makeImagesExpandable();
+        }
+      });
+    });
+
+    observer.observe(document.body, { childList: true, subtree: true });
+  </script>
+</body>
+</html>
